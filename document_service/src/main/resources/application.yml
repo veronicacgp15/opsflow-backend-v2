@@ -40,6 +40,16 @@ app:
       created: document.created
       updated: document.updated
 
+storage:
+  r2:
+    enabled: ${R2_ENABLED:false}
+    endpoint: ${R2_ENDPOINT:https://ce59a4a791a9ca8a248b7ab7769dbc8a.r2.cloudflarestorage.com}
+    region: ${R2_REGION:auto}
+    bucket: ${R2_BUCKET:}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+    public-base-url: ${R2_PUBLIC_BASE_URL:}
+
 management:
   endpoints:
     web:

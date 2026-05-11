@@ -10,12 +10,10 @@ import static com.opsflow.auth_service.domain.constants.AuthConstants.*;
 @Configuration
 public class RabbitMQConfig {
 
-
     @Bean
     public DirectExchange authExchange() {
         return new DirectExchange(AUTH_EXCHANGE);
     }
-
 
     @Bean
     public Queue userRegisteredQueue() {

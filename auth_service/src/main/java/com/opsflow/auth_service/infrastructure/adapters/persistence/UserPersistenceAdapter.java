@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Component
@@ -36,6 +35,12 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
     }
 
     @Override
+    public Optional<UserDomain> findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(userMapper::toDomain);
+    }
+
+    @Override
     public Optional<UserDomain> findById(Long id) {
         return userRepository.findById(id)
                 .map(userMapper::toDomain);
@@ -52,7 +57,7 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
     public List<UserDomain> findAll() {
         return StreamSupport.stream(userRepository.findAll().spliterator(), false)
                 .map(userMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -67,14 +72,17 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
                     existingEntity.setName(userDomain.getName());
                     existingEntity.setLastname(userDomain.getLastname());
                     existingEntity.setEmail(userDomain.getEmail());
-                    existingEntity.setEnabled(userDomain.getEnabled());
+                    if (userDomain.getPassword() != null && !userDomain.getPassword().isEmpty()) {
+                        existingEntity.setPassword(userDomain.getPassword());
+                    }
+                    existingEntity.setEnabled(userDomain.getEnabled() != null ? userDomain.getEnabled() : false);
                     existingEntity.setOrganizationId(userDomain.getOrganizationId());
 
                     if (userDomain.getRoles() != null && !userDomain.getRoles().isEmpty()) {
                         List<Role> newRoles = userDomain.getRoles().stream()
                                 .map(roleName -> roleRepositoryPort.findByName(roleName)
                                         .orElseThrow(() -> new RuntimeException("Error: Role " + roleName + " is not found.")))
-                                .collect(Collectors.toList());
+                                .toList();
                         existingEntity.setRoles(newRoles);
                     } else {
                         existingEntity.getRoles().clear();

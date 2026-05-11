@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Component
@@ -37,6 +36,6 @@ public class RolePersistenceAdapter implements RoleRepositoryPort {
     @Override
     public List<Role> findAll() {
         return StreamSupport.stream(roleRepository.findAll().spliterator(), false)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

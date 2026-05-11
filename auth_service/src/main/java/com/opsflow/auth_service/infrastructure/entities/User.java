@@ -24,7 +24,7 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    private Boolean enabled;
+    private Boolean enabled = false;
 
     private Long organizationId;
 

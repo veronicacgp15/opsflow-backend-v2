@@ -18,6 +18,12 @@ spring:
           predicates:
             - Path=/auth/**
 
+        # AdminUserController en auth-service (@RequestMapping /users)
+        - id: auth-service-users
+          uri: lb://auth-service
+          predicates:
+            - Path=/users/**
+
         - id: org-service
           uri: lb://org-service
           predicates:

@@ -11,5 +11,9 @@ public record OrganizationResponse(
     String phone,
     Boolean active,
     Integer planLimit,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    Long createdByUserId,
+    String createdByName,
+    String createdByLastname,
+    String createdByFullName
 ) {}

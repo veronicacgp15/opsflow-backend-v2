@@ -13,4 +13,8 @@ public interface RefreshTokenService {
     RefreshToken verifyExpiration(RefreshToken token);
 
     void deleteByUsername(String username);
+
+    void deleteByUserId(Long userId);
+
+    boolean hasActiveSession(String username);
 }

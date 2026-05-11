@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -21,22 +20,29 @@ public class DocumentStatusScheduler {
     private final DocumentRepositoryPort repositoryPort;
     private final DocumentEventPublisherPort eventPublisher;
 
-    @Scheduled(cron = "0 0 1 * * ?") // Se ejecuta a la 1:00 AM todos los días
+    @Scheduled(cron = "0 0 1 * * ?")
     @Transactional
     public void checkDocumentStatuses() {
-        log.info("Iniciando escaneo diario de estados de documentos...");
-        LocalDate today = LocalDate.now();
-        List<DocumentDomain> documents = repositoryPort.findAll();
+            log.info("Iniciando escaneo diario de estados de documentos...");
+            LocalDate today = LocalDate.now();
 
-        for (DocumentDomain doc : documents) {
-            DocumentStatus previousStatus = doc.getStatus();
-            doc.updateStatusBasedOnDate(today);
+            repositoryPort.findAll().forEach(doc -> {
+                DocumentStatus previousStatus = doc.getStatus();
+                doc.updateStatusBasedOnDate(today);
 
-            if (previousStatus != doc.getStatus()) {
-                repositoryPort.save(doc);
-                if (doc.getStatus() == DocumentStatus.EXPIRING) eventPublisher.publishDocumentExpiringEvent(doc);
-                if (doc.getStatus() == DocumentStatus.EXPIRED) eventPublisher.publishDocumentExpiredEvent(doc);
+                if (previousStatus != doc.getStatus()) {
+                    repositoryPort.save(doc);
+                    publishEventIfApplicable(doc);
+                }
+            });
+
+            log.info("Escaneo diario de documentos finalizado exitosamente.");
+        }
+        private void publishEventIfApplicable(DocumentDomain doc) {
+            switch (doc.getStatus()) {
+                case EXPIRING -> eventPublisher.publishDocumentExpiringEvent(doc);
+                case EXPIRED -> eventPublisher.publishDocumentExpiredEvent(doc);
+                default -> {}
             }
         }
-    }
 }

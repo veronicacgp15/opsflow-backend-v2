@@ -19,9 +19,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private Long refreshTokenDurationMs;
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
 
     public RefreshTokenServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
         this.refreshTokenRepository = refreshTokenRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -56,5 +58,20 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Transactional
     public void deleteByUsername(String username) {
         refreshTokenRepository.findByUsername(username).ifPresent(refreshTokenRepository::delete);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByUserId(Long userId) {
+        userRepository.findById(userId)
+                .ifPresent(u -> deleteByUsername(u.getUsername()));
+    }
+
+    @Override
+    public boolean hasActiveSession(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        return refreshTokenRepository.findByUsername(username).isPresent();
     }
 }

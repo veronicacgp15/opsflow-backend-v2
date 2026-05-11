@@ -5,6 +5,8 @@ import com.opsflow.org_service.infrastructure.entities.Organization;
 import com.opsflow.org_service.infrastructure.entities.OrganizationUser;
 import com.opsflow.org_service.infrastructure.repositories.OrganizationRepository;
 import com.opsflow.org_service.infrastructure.repositories.OrganizationUserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,8 @@ import static com.opsflow.org_service.domain.constants.OrgConstants.ORGANIZATION
 
 @Service
 public class OrganizationUserService implements OrganizationUserServicePort {
+
+    private static final Logger logger = LoggerFactory.getLogger(OrganizationUserService.class);
 
     private final OrganizationUserRepository organizationUserRepository;
     private final OrganizationRepository organizationRepository;
@@ -38,6 +42,7 @@ public class OrganizationUserService implements OrganizationUserServicePort {
         organizationUser.setRole("MEMBER");
 
         organizationUserRepository.save(organizationUser);
-        System.out.println("Usuario " + userId + ASOCIADO_A_LA_ORGANIZACION + organizationId);
+
+        logger.info("Usuario {}{}{}", userId, ASOCIADO_A_LA_ORGANIZACION, organizationId);
     }
 }

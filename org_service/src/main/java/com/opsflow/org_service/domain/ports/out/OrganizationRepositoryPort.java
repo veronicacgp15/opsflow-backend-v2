@@ -10,4 +10,6 @@ public interface OrganizationRepositoryPort {
     List<OrganizationDomain> findAll();
     void deleteById(Long id);
     Optional<OrganizationDomain> findByTaxId(String taxId);
+
+    List<OrganizationDomain> findByCreatedByUserId(Long createdByUserId);
 }
