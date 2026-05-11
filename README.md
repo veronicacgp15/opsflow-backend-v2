@@ -1,163 +1,305 @@
-# 🚀 OpsFlow Backend - Plataforma SaaS
+# OpsFlow Backend - Plataforma SaaS
 
-## 🛠 Stack Tecnológico (Core)
+## Stack tecnológico
 
 - **Lenguaje:** `Java 21`
-- **Framework:** `Spring Boot 3.4.x` (Alineado con Spring Cloud 2024.0.0)
-- **Seguridad:** `Spring Security 6` + `JWT` (JSON Web Tokens)
+- **Framework:** `Spring Boot 3.4.x`
+- **Seguridad:** `Spring Security 6` + `JWT`
 - **Persistencia:** `PostgreSQL 15`
-- **Mensajería:** `RabbitMQ 3.12` (Arquitectura Event-Driven)
-- **Caché & Tokens:** `Redis 7` (Gestión de Refresh Tokens)
-- **Descubrimiento:** `Netflix Eureka Server`
-- **Gateway:** `Spring Cloud Gateway`
+- **Mensajería:** `RabbitMQ 3.12`
+- **Caché y refresh tokens:** `Redis 7`
+- **Service discovery:** `Netflix Eureka Server`
+- **API Gateway:** `Spring Cloud Gateway`
 
 ---
 
-## 🚀 Guía de Inicio Rápido
+## Arquitectura del backend
 
-Siga estos pasos en orden para levantar el ecosistema completo correctamente.
+OpsFlow está compuesto por los siguientes módulos:
 
-### 1. Levantar la Infraestructura (Docker) 🐳
+| Módulo | Puerto | Responsabilidad | Rutas principales |
+| :--- | :---: | :--- | :--- |
+| `gateway_service` | `8080` | Punto único de entrada | `/auth/**`, `/users/**`, `/org/**`, `/documents/**` |
+| `auth_service` | `8081` | Autenticación, JWT, usuarios, roles y permisos | `/auth/**`, `/users/**`, `/auth-legacy/**` |
+| `org_service` | `8082` | Organizaciones y sedes | `/org/**` |
+| `document_service` | `8083` | Gestión documental, versiones y descargas | `/documents/**` |
+| `eureka_server` | `8761` | Registro y descubrimiento de servicios | Dashboard Eureka |
+| `common` | N/A | Librería compartida | Sin endpoints REST |
 
-Es **fundamental** que la base de datos esté creada (`db_opsflow`) y operativa antes de ejecutar los microservicios.
-Asegúrate de tener Docker instalado y ejecuta los siguientes comandos desde la raíz del proyecto:
+### Rutas publicadas por el gateway
+
+El acceso recomendado desde clientes externos es a través del gateway en `http://localhost:8080`.
+
+- `/auth/**` -> `auth_service`
+- `/users/**` -> `auth_service`
+- `/org/**` -> `org_service`
+- `/documents/**` -> `document_service`
+
+> **Importante:** los endpoints `/auth-legacy/**` existen en `auth_service`, pero no están publicados explícitamente por `gateway_service`. Para consumirlos debes llamar directamente al puerto `8081`.
+
+---
+
+## Guía de inicio rápido
+
+Sigue estos pasos en orden para levantar el ecosistema completo correctamente.
+
+### 1. Levantar la infraestructura base
+
+Es fundamental que la base de datos `db_opsflow` y los servicios auxiliares estén operativos antes de iniciar los microservicios.
 
 ```bash
-# Copia en el terminal 
 docker-compose up -d postgres-db redis-cache rabbitmq-broker
 ```
 
-### 2. Orden de Ejecución de Microservicios ⚙️
+### 2. Orden de ejecución de microservicios
 
-1.  **🌐 Eureka Server**: Puerto `8761`.
-2.  **🔐 Auth Service**: Puerto `8081`.
-3.  **🏢 Org Service**: Puerto `8082`.
-4.  **📄 Document Service**: Puerto `8083`.
-5.  **🚪 Gateway Service**: Puerto `8080`.
----
-    💡 Nota (Troubleshooting): ¿Un puerto ya está en uso?
-    Si al intentar levantar un microservicio (msc) obtienes un error porque el puerto ya está ocupado, puedes liberarlo desde la terminal de Windows.
+1. `eureka_server` en `8761`
+2. `auth_service` en `8081`
+3. `org_service` en `8082`
+4. `document_service` en `8083`
+5. `gateway_service` en `8080`
+
+### 3. Troubleshooting rápido de puertos en Windows
+
 ```bash
-# 1. Ver el proceso que ocupa el puerto (ejemplo con el puerto 9000)
+# Ver el proceso que ocupa un puerto
 netstat -ano | findstr :9000
 
-# 2. Matar el proceso (Reemplaza [NÚMERO_DE_PID] por el número de la última columna del comando anterior)
-taskkill /F /PID [NÚMERO_DE_PID]
+# Finalizar el proceso
+taskkill /F /PID [NUMERO_DE_PID]
 ```
----
-## 🔍 Monitoreo y Estado de los Servicios (Service Discovery)
-
-Para verificar qué microservicios se han registrado correctamente y están operativos, puedes acceder al **Dashboard de Eureka**. Es la forma más rápida de confirmar que el ecosistema está "saludable" sin revisar logs individuales.
-
-* **Panel de Control:** [http://localhost:8761/](http://localhost:8761/)
-* **Qué buscar:** En la sección *"Instances currently registered with Eureka"*, deberías ver listados:
-    * `AUTH-SERVICE`
-    * `ORG-SERVICE`
-    * `DOCUMENT-SERVICE`
-    * `GATEWAY-SERVICE`
-
-> **Nota:** Si un servicio no aparece en la lista, revisa que haya podido conectar con la base de datos o el broker de mensajería primero.
-
-## 🧪 Pruebas con Postman / Swagger (Paso a Paso)
-📦 Colección de Postman: El repositorio incluye una colección de Postman exportada lista para importar. Puedes utilizarla para probar todos los endpoints sin necesidad de configurar las peticiones manualmente.
-
-### A. Autenticación, Roles y Usuarios (Auth Service)
-
-| Acción | Método | Endpoint | Permiso |
-| :--- | :--- | :--- | :--- |
-| Registro de Usuario | `POST` | `/auth/signup` | Público |
-| Login | `POST` | `/auth/login` | Público |
-| Refrescar Access Token | `POST` | `/auth/refresh` | Público (con refresh token válido) |
-| Logout | `POST` | `/auth/logout` | Usuario autenticado |
-| Generar Hash (utilidad) | `GET` | `/auth/generate-hash` | Público |
-| Listar Roles | `GET` | `/auth/roles` | `ROLE_ADMIN` |
-| Obtener Rol por ID | `GET` | `/auth/roles/{id}` | `ROLE_ADMIN` |
-| Crear Rol | `POST` | `/auth/roles/create` | `ROLE_ADMIN` |
-| Actualizar Rol | `PUT` | `/auth/roles/{id}` | `ROLE_ADMIN` |
-| Eliminar Rol | `DELETE` | `/auth/roles/{id}` | `ROLE_ADMIN` |
-| Cambiar Rol a Usuario | `PUT` | `/auth/roles/users/{userId}/change-role` | `ROLE_ADMIN` |
-| Listar Usuarios | `GET` | `/users` | `ROLE_ADMIN` |
-| Obtener Usuario por ID | `GET` | `/users/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` (misma organización) |
-| Usuarios de mi Organización | `GET` | `/users/my-organization` | `ROLE_MANAGER` |
-| Crear Usuario | `POST` | `/users` | `ROLE_ADMIN` o `ROLE_MANAGER` |
-| Actualizar Usuario | `PUT` | `/users/{id}` | `ROLE_ADMIN` |
-| Actualizar Roles de Usuario | `PATCH` | `/users/{id}/roles` | `ROLE_ADMIN` |
-| Desactivar Usuario | `PATCH` | `/users/{id}/deactivate` | `ROLE_ADMIN` |
-| Revocar Sesiones de Usuario | `DELETE` | `/users/{id}/sessions` | `ROLE_ADMIN` |
-| Cambiar mi Contraseña | `PATCH` | `/users/change-password` | Usuario autenticado |
-
-### B. Gestión de Organizaciones y Sedes (Org Service)
-
-| Acción | Método | Endpoint | Permiso |
-| :--- | :--- | :--- | :--- |
-| Crear Organización | `POST` | `/org/create` | `ROLE_ADMIN` |
-| Listar Organizaciones | `GET` | `/org` | `ROLE_ADMIN` |
-| Obtener Organización por ID | `GET` | `/org/{id}` | `ROLE_ADMIN`, `ROLE_MANAGER`/`ROLE_USER` (si pertenece) |
-| Actualizar Organización | `PUT` | `/org/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` (si pertenece) |
-| Eliminar Organización | `DELETE` | `/org/{id}` | `ROLE_ADMIN` |
-| Crear Sede | `POST` | `/org/locations/create` | `ROLE_ADMIN` |
-| Listar Sedes | `GET` | `/org/locations` | `ROLE_ADMIN` |
-| Listar Sedes por Organización | `GET` | `/org/locations/by-org/{orgId}` | `ROLE_ADMIN`, `ROLE_MANAGER`/`ROLE_USER` (si pertenece) |
-| Obtener Sede por ID | `GET` | `/org/locations/{id}` | `ROLE_ADMIN`, `ROLE_MANAGER`/`ROLE_USER` (misma organización) |
-| Actualizar Sede | `PUT` | `/org/locations/{id}` | `ROLE_ADMIN` |
-| Eliminar Sede | `DELETE` | `/org/locations/{id}` | `ROLE_ADMIN` |
-
-### C. Gestión Documental (Document Service)
-
-| Acción | Método | Endpoint | Permiso |
-| :--- | :--- | :--- | :--- |
-| Crear Documento | `POST` | `/documents/create` | `ROLE_ADMIN`, `ROLE_MANAGER`, `ROLE_USER` |
-| Listar Documentos | `GET` | `/documents` | Usuario autenticado |
-| Buscar Documento por ID | `GET` | `/documents/{id}` | Según regla `canAccessDocument` |
-| Actualizar Metadatos | `PUT` | `/documents/{id}` | `ROLE_ADMIN`, `ROLE_MANAGER` (misma organización) o dueño |
-| Eliminar Documento | `DELETE` | `/documents/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` (misma organización) |
-| Subir Nueva Versión | `POST` | `/documents/add-version/{id}` | `ROLE_ADMIN`, `ROLE_MANAGER` (misma organización) o dueño |
-| Forzar Estado | `PATCH` | `/documents/{id}/force-state` | `ROLE_ADMIN` |
 
 ---
 
-## 📖 Swagger/OpenAPI (verificado)
+## Monitoreo y estado de los servicios
 
-Swagger está configurado y habilitado en los tres microservicios:
+Para verificar que los servicios se registraron correctamente en Eureka:
 
-- Dependencia en `pom.xml`: `org.springdoc:springdoc-openapi-starter-webmvc-ui`
-- Configuración en `application.yml`: `springdoc.api-docs.path=/v3/api-docs` y `springdoc.swagger-ui.path=/swagger-ui.html`
-- Rutas Swagger permitidas en seguridad (`/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-ui.html`)
+- **Dashboard:** [http://localhost:8761/](http://localhost:8761/)
+- **Instancias esperadas:**
+  - `AUTH-SERVICE`
+  - `ORG-SERVICE`
+  - `DOCUMENT-SERVICE`
+  - `GATEWAY-SERVICE`
 
-URLs:
+Si un servicio no aparece, revisa primero su conectividad hacia la base de datos, Redis o RabbitMQ.
+
+---
+
+## Roles y modelo de autorización
+
+### Roles base del sistema
+
+| Rol | Alcance funcional | Endpoints representativos |
+| :--- | :--- | :--- |
+| `ROLE_ADMIN` | Acceso global al ecosistema. Administra usuarios, roles, permisos, organizaciones, sedes y operaciones administrativas de documentos. | `/auth/roles/**`, `/auth/permissions`, `/users/**`, `/org/**`, `/documents/{id}/force-state`, `/documents/storage/list` |
+| `ROLE_MANAGER` | Administración acotada a su organización. Puede invitar usuarios `ROLE_USER`, consultar usuarios de su organización, actualizar su organización, gestionar sedes propias y operar documentos de su organización. | `/users/my-organization`, `/users/by-organization/{orgId}`, `POST /users`, `PUT /org/{id}`, `/org/locations/**`, `/documents/**` |
+| `ROLE_USER` | Rol operativo. Puede autenticarse, cambiar su contraseña, consultar su organización y sus sedes, crear y operar documentos de su organización dentro de las reglas de propiedad. | `/auth/logout`, `/auth/me/permissions`, `/users/change-password`, `/org/{id}`, `/org/locations/by-org/{orgId}`, `/documents/create`, `/documents/{id}` |
+
+### Notas importantes sobre autorización
+
+- Los roles semilla reales del sistema son `ROLE_ADMIN`, `ROLE_MANAGER` y `ROLE_USER`.
+- Se pueden crear roles personalizados desde `POST /auth/roles/create`, pero la mayor parte de las reglas de acceso actuales sigue validándose por roles fijos o por lógica de negocio.
+- `auth_service` combina reglas de `SecurityConfig` con `@PreAuthorize`.
+- `org_service` utiliza reglas dinámicas por organización y, además, permite configurar algunos roles desde `org_service/src/main/resources/application.yml`.
+- `document_service` aplica permisos por rol y también valida pertenencia a la organización o propiedad del documento.
+- Los endpoints `PATCH /org/{id}/activate` y `PATCH /org/{id}/deactivate` quedan para `ROLE_ADMIN` por defecto, pero también pueden habilitarse mediante las authorities `ORG_ACTIVATE` y `ORG_DEACTIVATE`.
+
+---
+
+## Inventario de endpoints por microservicio
+
+La siguiente matriz refleja los endpoints definidos en el código backend y el rol o condición de acceso efectiva.
+
+### 1. Auth Service
+
+Servicio responsable de autenticación, sesiones, usuarios, roles y permisos.
+
+#### 1.1 Autenticación y sesión
+
+| Acción | Método | Endpoint | Acceso |
+| :--- | :---: | :--- | :--- |
+| Login principal | `POST` | `/auth/login` | Público |
+| Registro de usuario | `POST` | `/auth/signup` | Público |
+| Verificación de correo | `GET` | `/auth/verify?token=...` | Público |
+| Solicitud de recuperación de contraseña | `POST` | `/auth/forgot-password` | Público |
+| Restablecer contraseña | `POST` | `/auth/reset-password` | Público |
+| Refrescar access token | `POST` | `/auth/refresh` | Público con refresh token válido |
+| Cerrar sesión | `POST` | `/auth/logout` | Usuario autenticado |
+| Ver permisos efectivos del usuario actual | `GET` | `/auth/me/permissions` | Usuario autenticado |
+| Login legado | `POST` | `/auth-legacy/login` | Público |
+| Registro legado | `POST` | `/auth-legacy/signup` | Público |
+| Refresh legado | `POST` | `/auth-legacy/refresh` | Público con refresh token válido |
+| Logout legado | `POST` | `/auth-legacy/logout` | Usuario autenticado |
+
+#### 1.2 Roles y permisos
+
+| Acción | Método | Endpoint | Acceso |
+| :--- | :---: | :--- | :--- |
+| Listar catálogo de permisos | `GET` | `/auth/permissions` | `ROLE_ADMIN` |
+| Listar roles | `GET` | `/auth/roles` | `ROLE_ADMIN` |
+| Obtener rol por ID | `GET` | `/auth/roles/{id}` | `ROLE_ADMIN` |
+| Crear rol | `POST` | `/auth/roles/create` | `ROLE_ADMIN` |
+| Actualizar rol | `PUT` | `/auth/roles/{id}` | `ROLE_ADMIN` |
+| Eliminar rol | `DELETE` | `/auth/roles/{id}` | `ROLE_ADMIN` |
+| Ver permisos asignados a un rol | `GET` | `/auth/roles/{id}/permissions` | `ROLE_ADMIN` |
+| Reemplazar permisos de un rol | `PUT` | `/auth/roles/{id}/permissions` | `ROLE_ADMIN` |
+| Reemplazar todos los roles de un usuario por uno solo | `PUT` | `/auth/roles/users/{userId}/change-role` | `ROLE_ADMIN` |
+| Reemplazar todos los roles de un usuario por una lista | `PUT` | `/auth/roles/users/{userId}/roles` | `ROLE_ADMIN` |
+
+#### 1.3 Usuarios
+
+| Acción | Método | Endpoint | Acceso |
+| :--- | :---: | :--- | :--- |
+| Resolver perfiles públicos por lote | `POST` | `/users/profiles/batch` | Usuario autenticado |
+| Listar todos los usuarios | `GET` | `/users` | `ROLE_ADMIN` |
+| Listar usuarios de mi organización | `GET` | `/users/my-organization` | `ROLE_ADMIN` o `ROLE_MANAGER` |
+| Listar usuarios por organización | `GET` | `/users/by-organization/{orgId}` | `ROLE_ADMIN` o `ROLE_MANAGER` de esa misma organización |
+| Obtener usuario por ID | `GET` | `/users/{id}` | `ROLE_ADMIN` |
+| Crear o invitar usuario | `POST` | `/users` | `ROLE_ADMIN` o `ROLE_MANAGER` |
+| Actualizar usuario | `PUT` | `/users/{id}` | `ROLE_ADMIN` |
+| Reemplazar roles del usuario | `PATCH` | `/users/{id}/roles` | `ROLE_ADMIN` |
+| Asignar o cambiar manager de una organización | `PUT` | `/users/organizations/{orgId}/manager/{userId}` | `ROLE_ADMIN` |
+| Asignar o cambiar manager de una organización | `PATCH` | `/users/organizations/{orgId}/manager/{userId}` | `ROLE_ADMIN` |
+| Cambiar mi contraseña | `PATCH` | `/users/change-password` | Usuario autenticado |
+| Desactivar usuario | `PATCH` | `/users/{id}/deactivate` | `ROLE_ADMIN` |
+| Activar usuario | `PATCH` | `/users/{id}/activate` | `ROLE_ADMIN` |
+| Revocar sesión de usuario | `POST` | `/users/{id}/revoke-session` | `ROLE_ADMIN` |
+| Generar hash BCrypt | `GET` | `/users/tools/password-hash?password=...` | `ROLE_ADMIN` |
+
+**Reglas adicionales en creación de usuarios (`POST /users`):**
+
+- `ROLE_ADMIN` puede crear usuarios para cualquier organización y con cualquier rol.
+- `ROLE_MANAGER` solo puede crear usuarios `ROLE_USER` y únicamente dentro de su propia organización.
+
+### 2. Org Service
+
+Servicio responsable de organizaciones y sedes.
+
+#### 2.1 Organizaciones
+
+| Acción | Método | Endpoint | Acceso |
+| :--- | :---: | :--- | :--- |
+| Crear organización | `POST` | `/org/create` | `ROLE_ADMIN` por configuración actual |
+| Ver organizaciones del contexto actual | `GET` | `/org/mine` | Usuario autenticado |
+| Listar todas las organizaciones | `GET` | `/org` | `ROLE_ADMIN` por configuración actual |
+| Obtener organización por ID | `GET` | `/org/{id}` | `ROLE_ADMIN` o usuario miembro de esa organización |
+| Actualizar organización | `PUT` | `/org/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` de esa misma organización |
+| Eliminar organización | `DELETE` | `/org/{id}` | `ROLE_ADMIN` por configuración actual |
+| Activar organización | `PATCH` | `/org/{id}/activate` | `ROLE_ADMIN` por defecto o authority `ORG_ACTIVATE` |
+| Desactivar organización | `PATCH` | `/org/{id}/deactivate` | `ROLE_ADMIN` por defecto o authority `ORG_DEACTIVATE` |
+
+**Comportamiento de `GET /org/mine`:**
+
+- `ROLE_ADMIN` obtiene las organizaciones creadas por su `userId`.
+- `ROLE_MANAGER` y `ROLE_USER` obtienen su organización asociada en el JWT.
+
+#### 2.2 Sedes (`locations`)
+
+| Acción | Método | Endpoint | Acceso |
+| :--- | :---: | :--- | :--- |
+| Crear sede | `POST` | `/org/locations/create` | `ROLE_ADMIN` o `ROLE_MANAGER` de la organización objetivo |
+| Listar todas las sedes | `GET` | `/org/locations` | `ROLE_ADMIN` por configuración actual |
+| Listar sedes por organización | `GET` | `/org/locations/by-org/{orgId}` | `ROLE_ADMIN` o usuario miembro de esa organización |
+| Obtener sede por ID | `GET` | `/org/locations/{id}` | `ROLE_ADMIN` o usuario miembro de la organización propietaria |
+| Actualizar sede | `PUT` | `/org/locations/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` de la organización propietaria |
+| Eliminar sede | `DELETE` | `/org/locations/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` de la organización propietaria |
+
+### 3. Document Service
+
+Servicio responsable del ciclo de vida documental, versiones y descargas.
+
+| Acción | Método | Endpoint | Acceso |
+| :--- | :---: | :--- | :--- |
+| Crear documento | `POST` | `/documents/create` | `ROLE_ADMIN`, `ROLE_MANAGER` o `ROLE_USER` |
+| Obtener documento por ID | `GET` | `/documents/{id}` | Usuario autenticado con acceso a la organización del documento o `ROLE_ADMIN` |
+| Listar documentos | `GET` | `/documents` | Usuario autenticado |
+| Actualizar metadatos | `PUT` | `/documents/{id}` | `ROLE_ADMIN`, `ROLE_MANAGER` de la misma organización o dueño del documento |
+| Eliminar documento | `DELETE` | `/documents/{id}` | `ROLE_ADMIN` o `ROLE_MANAGER` de la misma organización |
+| Subir nueva versión | `POST` | `/documents/add-version/{id}` | `ROLE_ADMIN`, `ROLE_MANAGER` de la misma organización o dueño del documento |
+| Eliminar una versión | `DELETE` | `/documents/{id}/versions/{versionId}` | `ROLE_ADMIN`, `ROLE_MANAGER` de la misma organización o dueño del documento |
+| Forzar cambio de estado | `PATCH` | `/documents/{id}/force-state?state=...` | `ROLE_ADMIN` |
+| Descargar última versión | `GET` | `/documents/{id}/download` | Usuario autenticado con acceso a la organización del documento o `ROLE_ADMIN` |
+| Descargar versión específica | `GET` | `/documents/{id}/versions/{versionId}/download` | Usuario autenticado con acceso a la organización del documento o `ROLE_ADMIN` |
+| Listar archivos del storage | `GET` | `/documents/storage/list?prefix=...` | `ROLE_ADMIN` |
+| Listar tipos de documento | `GET` | `/documents/types` | Usuario autenticado |
+
+**Reglas adicionales en documentos:**
+
+- Si el usuario no es `ROLE_ADMIN`, el `organizationId` del documento se fuerza a la organización contenida en el JWT.
+- `ROLE_USER` puede actualizar documentos y eliminar versiones solo si es el dueño del documento.
+- `ROLE_USER` no puede eliminar el documento completo.
+- En `GET /documents`, `ROLE_ADMIN` ve todo; el resto solo los documentos de su organización.
+
+### 4. Módulos sin endpoints de negocio
+
+| Módulo | Descripción |
+| :--- | :--- |
+| `gateway_service` | No expone endpoints de negocio propios; enruta las llamadas hacia los microservicios. |
+| `eureka_server` | Servicio de descubrimiento y registro. |
+| `common` | Librería compartida sin controladores REST. |
+
+---
+
+## Swagger / OpenAPI
+
+Swagger está habilitado en los tres microservicios de negocio.
 
 - **Auth Service:** [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
 - **Org Service:** [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html)
 - **Document Service:** [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html)
 
----
-## 📊 Cobertura y Análisis (JaCoCo & SonarQube)
-JaCoCo
+Rutas públicas relacionadas con documentación:
 
-Ejecuta mvn clean verify y abre target/site/jacoco/index.html.
+- `/v3/api-docs`
+- `/swagger-ui.html`
+- `/swagger-ui/**`
+
+---
+
+## Pruebas con Postman
+
+El repositorio incluye una colección de Postman exportada para probar los endpoints sin configurarlos manualmente.
+
+Recomendación de flujo:
+
+1. Ejecuta login en `/auth/login`.
+2. Copia el access token JWT.
+3. Envía el token en `Authorization: Bearer <token>`.
+4. Prueba los endpoints según el rol del usuario autenticado.
+
+---
+
+## Cobertura y análisis
+
+### JaCoCo
+
 ```bash
 mvn clean install
 ```
-SonarQube
-- 1.Levanta el contenedor: docker-compose up -d sonarqube
-- 2.Accede a http://localhost:9000 (admin/admin).
-  ```bash
-    #Configuracion levantar el proyecto en sonar ir a
-    Administration > Secutiry > deshabiltar los 3
-    Secutiry > Global permission > selecciona todas
-  ```
-- 3.Ejecuta el análisis
-  ```bash
-    #Activacion
-      docker-compose up -d sonarqube
-  
-    #Activacion de Test
-      mvn -DskipTests=true clean compile 
-  
-      mvn sonar:sonar -Dsonar.host.url=http://localhost:9000
-  ```
 
-## 📦 Limpieza de Docker
+Luego abre `target/site/jacoco/index.html`.
+
+### SonarQube
+
+1. Levanta el contenedor:
+
+```bash
+docker-compose up -d sonarqube
+```
+
+2. Accede a [http://localhost:9000](http://localhost:9000) con `admin/admin`.
+
+3. Ejecuta el análisis:
+
+```bash
+mvn -DskipTests=true clean compile
+mvn sonar:sonar -Dsonar.host.url=http://localhost:9000
+```
+
+---
+
+## Limpieza de Docker
 
 ```bash
 docker-compose down -v
