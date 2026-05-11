@@ -18,7 +18,7 @@ public class DocumentDomain {
     private Long documentTypeId;
     private DocumentStatus status;
     private LocalDate expirationDate;
-    private Long userId; // This acts as the ownerId
+    private Long userId;
     private Long organizationId;
     private String targetEntityType;
     private Long targetEntityId;

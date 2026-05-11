@@ -13,6 +13,7 @@ public record OrganizationRequest(
     String address,
     String email,
     String phone,
+    Long managerUserId,
     @Min(value = 0, message = "El límite del plan no puede ser negativo")
     Integer planLimit
 ) {}

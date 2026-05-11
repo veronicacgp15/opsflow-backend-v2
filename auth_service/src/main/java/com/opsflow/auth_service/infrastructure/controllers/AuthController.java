@@ -16,7 +16,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -28,25 +27,22 @@ import static com.opsflow.auth_service.domain.constants.AuthConstants.*;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/auth-legacy")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final JwtUtils jwtUtils;
-    private final PasswordEncoder passwordEncoder;
 
     public AuthController(AuthenticationManager authenticationManager, 
                           UserService userService,
                           RefreshTokenService refreshTokenService, 
-                          JwtUtils jwtUtils,
-                          PasswordEncoder passwordEncoder) {
+                          JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.refreshTokenService = refreshTokenService;
         this.jwtUtils = jwtUtils;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -58,7 +54,6 @@ public class AuthController {
 
         var user = userService.findByUsername(loginRequest.username()).orElseThrow();
         
-        // Inyectamos userId y organizationId en los detalles de la autenticación
         Map<String, Object> details = new HashMap<>();
         details.put("userId", user.getId());
         details.put("organizationId", user.getOrganizationId());
@@ -123,8 +118,7 @@ public class AuthController {
                             user.getUsername(), user.getPassword(), new ArrayList<>());
                     
                     var authentication = new UsernamePasswordAuthenticationToken(userDetails, null, new ArrayList<>());
-                    
-                    // Inyectamos detalles también en el refresh
+
                     Map<String, Object> details = new HashMap<>();
                     details.put("userId", user.getId());
                     details.put("organizationId", user.getOrganizationId());
@@ -141,11 +135,5 @@ public class AuthController {
     public ResponseEntity<MessageResponse> logoutUser(Authentication authentication) {
         refreshTokenService.deleteByUsername(authentication.getName());
         return ResponseEntity.ok(new MessageResponse("Log out successful!"));
-    }
-
-    @GetMapping("/generate-hash")
-    public ResponseEntity<String> generatePasswordHash(@RequestParam String password) {
-        String hashedPassword = passwordEncoder.encode(password);
-        return ResponseEntity.ok(hashedPassword);
     }
 }

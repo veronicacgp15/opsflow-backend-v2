@@ -19,6 +19,7 @@ public class OrganizationMapper {
         domain.setActive(entity.getActive());
         domain.setPlanLimit(entity.getPlanLimit());
         domain.setCreatedAt(entity.getCreatedAt());
+        domain.setCreatedByUserId(entity.getCreatedByUserId());
         return domain;
     }
 
@@ -34,6 +35,7 @@ public class OrganizationMapper {
         entity.setActive(domain.getActive());
         entity.setPlanLimit(domain.getPlanLimit());
         entity.setCreatedAt(domain.getCreatedAt());
+        entity.setCreatedByUserId(domain.getCreatedByUserId());
         return entity;
     }
 }

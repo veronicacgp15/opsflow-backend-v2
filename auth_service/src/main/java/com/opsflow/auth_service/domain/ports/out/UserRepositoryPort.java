@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface UserRepositoryPort {
     Optional<UserDomain> findByUsername(String username);
+    Optional<UserDomain> findByEmail(String email);
     Optional<UserDomain> findById(Long id);
     UserDomain save(UserDomain userDomain);
     List<UserDomain> findAll();

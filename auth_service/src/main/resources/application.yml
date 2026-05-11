@@ -22,6 +22,22 @@ spring:
     redis:
       host: localhost
       port: 6379
+  # CONFIGURACION SMTP
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: veronicacgarciap@gmail.com
+    password: vdsn lqbz zizs ajuo
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 server:
   port: 8081
@@ -35,6 +51,7 @@ eureka:
     instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
 
 app:
+  frontend-url: http://localhost:4200
   jwt:
     secret: =======================OpsFlowSecretKey2025BySeniorDev======================
     expiration: 3600000

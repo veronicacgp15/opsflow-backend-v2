@@ -2,7 +2,6 @@ package com.opsflow.org_service.infrastructure.adapters.messaging;
 
 import com.opsflow.org_service.application.events.UserRegisteredEvent;
 import com.opsflow.org_service.application.services.OrganizationUserService;
-import com.opsflow.org_service.domain.constants.OrgConstants.*;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 

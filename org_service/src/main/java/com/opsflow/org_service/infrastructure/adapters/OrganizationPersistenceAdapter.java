@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class OrganizationPersistenceAdapter implements OrganizationRepositoryPort {
@@ -53,5 +52,12 @@ public class OrganizationPersistenceAdapter implements OrganizationRepositoryPor
     public Optional<OrganizationDomain> findByTaxId(String taxId) {
         return organizationRepository.findByTaxId(taxId)
                 .map(organizationMapper::toDomain);
+    }
+
+    @Override
+    public List<OrganizationDomain> findByCreatedByUserId(Long createdByUserId) {
+        return organizationRepository.findByCreatedByUserId(createdByUserId).stream()
+                .map(organizationMapper::toDomain)
+                .toList();
     }
 }

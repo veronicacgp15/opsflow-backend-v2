@@ -23,7 +23,7 @@ Es **fundamental** que la base de datos esté creada (`db_opsflow`) y operativa 
 Asegúrate de tener Docker instalado y ejecuta los siguientes comandos desde la raíz del proyecto:
 
 ```bash
-# Unificación de los tres comandos para la infraestructura:
+# Copia en el terminal 
 docker-compose up -d postgres-db redis-cache rabbitmq-broker
 ```
 
@@ -34,7 +34,16 @@ docker-compose up -d postgres-db redis-cache rabbitmq-broker
 3.  **🏢 Org Service**: Puerto `8082`.
 4.  **📄 Document Service**: Puerto `8083`.
 5.  **🚪 Gateway Service**: Puerto `8080`.
+---
+    💡 Nota (Troubleshooting): ¿Un puerto ya está en uso?
+    Si al intentar levantar un microservicio (msc) obtienes un error porque el puerto ya está ocupado, puedes liberarlo desde la terminal de Windows.
+```bash
+# 1. Ver el proceso que ocupa el puerto (ejemplo con el puerto 9000)
+netstat -ano | findstr :9000
 
+# 2. Matar el proceso (Reemplaza [NÚMERO_DE_PID] por el número de la última columna del comando anterior)
+taskkill /F /PID [NÚMERO_DE_PID]
+```
 ---
 ## 🔍 Monitoreo y Estado de los Servicios (Service Discovery)
 
@@ -50,14 +59,7 @@ Para verificar qué microservicios se han registrado correctamente y están oper
 > **Nota:** Si un servicio no aparece en la lista, revisa que haya podido conectar con la base de datos o el broker de mensajería primero.
 
 ## 🧪 Pruebas con Postman / Swagger (Paso a Paso)
-
-Para pruebas directas por microservicio:
-
-- `auth_service`: `http://localhost:8081`
-- `org_service`: `http://localhost:8082`
-- `document_service`: `http://localhost:8083`
-
-Para pruebas centralizadas, usa el gateway en `http://localhost:8080`.
+📦 Colección de Postman: El repositorio incluye una colección de Postman exportada lista para importar. Puedes utilizarla para probar todos los endpoints sin necesidad de configurar las peticiones manualmente.
 
 ### A. Autenticación, Roles y Usuarios (Auth Service)
 
@@ -129,6 +131,31 @@ URLs:
 - **Document Service:** [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html)
 
 ---
+## 📊 Cobertura y Análisis (JaCoCo & SonarQube)
+JaCoCo
+
+Ejecuta mvn clean verify y abre target/site/jacoco/index.html.
+```bash
+mvn clean install
+```
+SonarQube
+- 1.Levanta el contenedor: docker-compose up -d sonarqube
+- 2.Accede a http://localhost:9000 (admin/admin).
+  ```bash
+    #Configuracion levantar el proyecto en sonar ir a
+    Administration > Secutiry > deshabiltar los 3
+    Secutiry > Global permission > selecciona todas
+  ```
+- 3.Ejecuta el análisis
+  ```bash
+    #Activacion
+      docker-compose up -d sonarqube
+  
+    #Activacion de Test
+      mvn -DskipTests=true clean compile 
+  
+      mvn sonar:sonar -Dsonar.host.url=http://localhost:9000
+  ```
 
 ## 📦 Limpieza de Docker
 

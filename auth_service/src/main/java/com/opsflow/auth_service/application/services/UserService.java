@@ -14,5 +14,7 @@ public interface UserService {
     List<UserDomain> findByOrganizationId(Long organizationId);
     void changePassword(Long userId, String newPassword);
     void deactivateAccount(Long userId);
+    void activateAccount(Long userId);
     Optional<UserDomain> updateRoles(Long userId, List<String> roles);
+    Optional<UserDomain> assignOrganizationManager(Long organizationId, Long userId);
 }

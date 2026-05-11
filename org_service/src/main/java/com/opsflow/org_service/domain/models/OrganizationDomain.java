@@ -12,6 +12,7 @@ public class OrganizationDomain {
     private Boolean active;
     private Integer planLimit;
     private LocalDateTime createdAt;
+    private Long createdByUserId;
 
     public OrganizationDomain() {
         this.active = true;
@@ -36,4 +37,6 @@ public class OrganizationDomain {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public Integer getPlanLimit() { return planLimit; }
     public void setPlanLimit(Integer planLimit) { this.planLimit = planLimit; }
+    public Long getCreatedByUserId() { return createdByUserId; }
+    public void setCreatedByUserId(Long createdByUserId) { this.createdByUserId = createdByUserId; }
 }

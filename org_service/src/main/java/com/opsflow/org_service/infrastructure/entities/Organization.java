@@ -24,6 +24,9 @@ public class Organization {
     private Integer planLimit;
     private LocalDateTime createdAt;
 
+    @Column(name = "created_by_user_id")
+    private Long createdByUserId;
+
     public Organization() {
     }
 
@@ -97,5 +100,13 @@ public class Organization {
 
     public void setPlanLimit(Integer planLimit) {
         this.planLimit = planLimit;
+    }
+
+    public Long getCreatedByUserId() {
+        return createdByUserId;
+    }
+
+    public void setCreatedByUserId(Long createdByUserId) {
+        this.createdByUserId = createdByUserId;
     }
 }

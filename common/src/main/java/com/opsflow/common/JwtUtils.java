@@ -19,10 +19,13 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
+    public static final String ORGANIZATION_ID = "organizationId";
+    public static final String USER_ID = "userId";
+
     @Value("${app.jwt.secret}")
     private String secret;
 
-    @Value("${app.jwt.expiration:3600000}") // Default 1 hour
+    @Value("${app.jwt.expiration:3600000}")
     private long expiration;
 
     public String generateAccessToken(Authentication authentication) {
@@ -39,19 +42,19 @@ public class JwtUtils {
                 .map(GrantedAuthority::getAuthority)
                 .toList();
 
-        // Extraer organizationId y userId de los detalles de la autenticación si existen
         Long organizationId = getOrganizationIdFromAuthentication(authentication);
         Long userId = getUserIdFromAuthentication(authentication);
 
         var builder = Jwts.builder()
                 .subject(username)
                 .claim("roles", roles)
+
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey());
 
-        if (organizationId != null) builder.claim("organizationId", organizationId);
-        if (userId != null) builder.claim("userId", userId);
+        if (organizationId != null) builder.claim(ORGANIZATION_ID, organizationId);
+        if (userId != null) builder.claim(USER_ID, userId);
 
         return builder.compact();
     }
@@ -75,11 +78,11 @@ public class JwtUtils {
     }
 
     public Long getOrganizationIdFromToken(String token) {
-        return getLongClaim(token, "organizationId");
+        return getLongClaim(token, ORGANIZATION_ID);
     }
 
     public Long getUserIdFromToken(String token) {
-        return getLongClaim(token, "userId");
+        return getLongClaim(token, USER_ID);
     }
 
     private Long getLongClaim(String token, String claimName) {
@@ -115,11 +118,11 @@ public class JwtUtils {
     }
 
     public Long getOrganizationIdFromAuthentication(Authentication authentication) {
-        return getClaimFromDetails(authentication, "organizationId");
+        return getClaimFromDetails(authentication, ORGANIZATION_ID);
     }
 
     public Long getUserIdFromAuthentication(Authentication authentication) {
-        return getClaimFromDetails(authentication, "userId");
+        return getClaimFromDetails(authentication, USER_ID);
     }
 
     private Long getClaimFromDetails(Authentication authentication, String key) {

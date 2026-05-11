@@ -8,6 +8,7 @@ public class LocationDomain {
     private Long organizationId;
 
     public LocationDomain() {
+
     }
 
     public Long getId() { return id; }

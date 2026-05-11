@@ -37,6 +37,15 @@ eureka:
 app:
   jwt:
     secret: =======================OpsFlowSecretKey2025BySeniorDev======================
+  org:
+    authorization:
+      organization-create-roles: [ROLE_ADMIN]
+      organization-read-all-roles: [ROLE_ADMIN]
+      organization-delete-roles: [ROLE_ADMIN]
+      location-create-roles: [ROLE_ADMIN, ROLE_MANAGER]
+      location-read-all-roles: [ROLE_ADMIN]
+      location-update-roles: [ROLE_ADMIN, ROLE_MANAGER]
+      location-delete-roles: [ROLE_ADMIN, ROLE_MANAGER]
 
 springdoc:
   api-docs:
